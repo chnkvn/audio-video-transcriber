@@ -1,4 +1,4 @@
-This repository contains a notebook, and must be used with a GPU for performance. 
+This repository contains a notebook, and must be used with a GPU for performance. A colab GPU is enough.
 
 To run it, you can:
 - Import the notebook on a google colab instance
