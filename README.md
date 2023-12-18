@@ -1,5 +1,6 @@
+# Audio-Video-Transcriber
 This repository contains a notebook, and must be used with a GPU for performance. A colab GPU is enough.
-
+It uses whisper3 and gradio. 
 To run it, you can:
 - Import the notebook on a google colab instance
 - Activate the GPU
