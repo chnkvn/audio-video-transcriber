@@ -3,7 +3,7 @@ name = "whisper-cpu"
 version = "0.1.0"
 description = ""
 authors = ["CHAN Kevin <chan.kevin@outlook.fr>"]
-readme = "README.md"
+readme = "README.org"
 
 [tool.poetry.dependencies]
 python = "^3.11"

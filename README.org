@@ -1,0 +1,45 @@
+* Audio-Video-Transcriber
+** Whisper-cpu
+This repository offers a way to transcribe media files on cpu using
+[[https://huggingface.co/distil-whisper/distil-large-v2][distil-whisper]] and [[https://github.com/systran/faster-whisper][faster-whisper]]. Files can be found online (e.g. a youtube video, paste its url on the app, or uploaded from local).
+*** Installation
+- Ensure to install [[https://ffmpeg.org/download.html][ffmpeg binary]]
+- clone this repo
+- run ~pip install -r requirements.txt~
+- first clone [[https://huggingface.co/bofenghuang/whisper-large-v3-french-distil-dec16][bofenghuang/whisper-large-v3-french-distil-dec16]] at root level of this repository, using ~python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='bofenghuang/whisper-large-v3-french-distil-dec16', local_dir='./models/whisper-large-v3-french-distil-dec16', allow_patterns='ctranslate2/*')"~
+- go to ~models/~ ; clone this two repositories:  [[https://huggingface.co/Systran/faster-distil-whisper-large-v2][Systran/faster-distil-whisper-large-v2]], [[https://huggingface.co/Systran/faster-whisper-large-v2][Systran/faster-whisper-large-v2]]
+- you can run the unit tests by moving to ~tests~ folder and using ~python -m unittest tests -v~
+- run the app using ~python whisper_cpu/app.py~
+
+*** Docker
+You can perform an install by building a docker image :
+- clone this repo
+- build the image
+- run the container. Make sure to redirect the port 7860 of the container to a port on your local machine.
+No need to download the models, they will be downloaded during the image building process.
+
+***  Models
+- faster-distil-whisper-large-v2 : a distilled model of whisper-v3 for English
+- [[https://huggingface.co/bofenghuang/whisper-large-v3-french-distil-dec16][bofenghuang/whisper-large-v3-french-distil-dec16]] : a distilled model of whisper-v3 for French
+- faster-whisper-large-v2 : a multilingual model. Slower than the above models.
+
+v3 versions of Whisper are more prone to hallucination than v2, that's why I choose to use the latter when they are available.
+
+** Notebook
+This repository also contains a notebook, and must be used with a GPU
+for performance. A colab GPU is enough. It uses whisper3 and gradio.
+To run it, you can:
+- Import the notebook on a google colab instance
+- Activate the GPU
+- Run all the cells
+- Scroll to the last cell and wait until a visual interface appears
+- Use the app
+
+Features:
+- Youtube video transcripter: Transcribe the content of a
+youtube video to a text file, one sentence per line separated by an
+empty new line or a srt file with timestamps.
+- Local audio/video file transcripter: Same as the youtube video transcripter, but for your local
+audio/video files.
+- Chunk reorder: After reviewing a srt file, assign
+an unique number to each chun to get them ordered.

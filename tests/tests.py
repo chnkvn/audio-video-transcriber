@@ -1,6 +1,6 @@
 import unittest
 
-from whisper_cpu.transcript import Model, main
+from whisper_cpu.app import Model, main
 
 
 class TestModel(unittest.TestCase):
