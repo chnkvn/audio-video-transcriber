@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "whisper-cpu"
+version = "0.1.0"
+description = ""
+authors = ["CHAN Kevin <chan.kevin@outlook.fr>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+torch = "^2.2.2"
+faster-whisper = {git = "https://github.com/SYSTRAN/faster-whisper.git", rev = "master"}
+attrs = "^23.2.0"
+
+
+[tool.poetry.group.dev.dependencies]
+icecream = "^2.1.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
