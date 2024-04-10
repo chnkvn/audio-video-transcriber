@@ -7,7 +7,6 @@ import torch
 import yt_dlp as youtube_dl
 from attrs import define
 from faster_whisper import WhisperModel
-from icecream import ic
 
 import gradio as gr
 
@@ -78,7 +77,6 @@ class Model:
             )
             transcript += formatted_segment + "\n"
             no_ts_transcript += segment.text.strip() + "\n"
-            ic(formatted_segment)
         return transcript, no_ts_transcript
 
 
