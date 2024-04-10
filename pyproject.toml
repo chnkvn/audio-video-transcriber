@@ -10,6 +10,7 @@ python = "^3.11"
 torch = "^2.2.2"
 faster-whisper = {git = "https://github.com/SYSTRAN/faster-whisper.git", rev = "master"}
 attrs = "^23.2.0"
+yt-dlp = "2024.03.10"
 
 
 [tool.poetry.group.dev.dependencies]
