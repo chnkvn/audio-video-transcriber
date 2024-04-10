@@ -1,18 +1,20 @@
+import tempfile
 import time
 from pathlib import Path
-from typing import Union
-import gradio as gr
+from typing import Tuple, Union
+
 import torch
 import yt_dlp as youtube_dl
 from attrs import define
 from faster_whisper import WhisperModel
 from icecream import ic
-import tempfile
+
+import gradio as gr
 
 # Variables
 FILE_LIMIT_MB = 1000
 YT_LENGTH_LIMIT_S = 3600
-AVAILABLE_LANGUAGES = ["English", "French"]
+AVAILABLE_LANGUAGES = ["English", "French", "Multilingual"]
 
 
 # Model
@@ -22,7 +24,7 @@ class Model:
     _model: Union[WhisperModel, None] = None
 
     @property
-    def model(self):
+    def model(self) -> WhisperModel:
         """Initialize a model depending on the language.
         - en : Initialize faster-distil-whisper-large-v2
         - fr : Initialize whisper-large-v3-french-distil-dec16
@@ -30,14 +32,16 @@ class Model:
         NB : whisper-large-v3 is prone to hallucinate more often
         than whisper-large-v2.
         """
-
         if not self._model:
             if self.language == "fr":
-                model_path = "models/whisper-large-v3-french-distil-dec16/ctranslate2"
+                model_path = (
+                    "../models/whisper-large-v3-french-distil-dec16/ctranslate2"
+                )
             elif self.language == "multi":
-                model_path = "models/faster-whisper-large-v2"
+                model_path = "../models/faster-whisper-large-v2"
             else:  # english
-                model_path = "models/faster-distil-whisper-large-v2"
+                self.language = 'en'
+                model_path = "../models/faster-distil-whisper-large-v2"
             # Initialize model
             device = "cuda" if torch.cuda.is_available() else "cpu"
             compute_type_dict = {"cuda": "float16", "cpu": "int8"}
@@ -51,8 +55,11 @@ class Model:
     def transcribe_media(
         self,
         mediapath: Union[str, Path],
-    ):
-        """Transcribe a media using model"""
+    ) -> Tuple[str, str]:
+        """Transcribe a media using model
+        - Generate a version with timestamps
+        - Generate another version without timestamps
+        """
         if mediapath.startswith("https://"):
             mediapath = download_yt_audio(mediapath)
         segments, info = self.model.transcribe(
@@ -76,12 +83,16 @@ class Model:
 
 
 # Download a youtube video
-def download_yt_audio(yt_url):
+def download_yt_audio(yt_url) -> str:
+    """
+    Download a video using its url.
+    Return a string describing the path of the downloaded media.
+    """
     info_loader = youtube_dl.YoutubeDL()
-    Path("dl").mkdir(parents=True, exist_ok=True)
+    Path("..", "dl").mkdir(parents=True, exist_ok=True)
     try:
         info = info_loader.extract_info(yt_url, download=False)
-        filename = str(Path("dl", f"{info['title']}.mp4"))
+        filename = str(Path("..", "dl", f"{info['title']}.mp4"))
     except youtube_dl.utils.DownloadError as err:
         raise gr.Error(str(err))
 
@@ -117,48 +128,54 @@ def download_yt_audio(yt_url):
             raise gr.Error(err(str))
 
 
-# Process
-def main(language: str, media: Union[str, Path] = "../tests/test_en.mp3"):
-    """Choose a language to load a model
-    eventually download the media and transcribe it."""
-    models_dict = {
-        "French": Model(language="fr"),
-        "English": Model(),
-        "Multilingual": Model(language="multi"),
-    }
-    model = models_dict.get(language, "English")
-    transcript, no_ts_transcript = model.transcribe_media(media)
-    return transcript, no_ts_transcript
-
-
 # Define function to save output to a file
-def save_output_to_file(output_text):
+def save_output_to_file(output_text, suffix=".txt") -> str:
     with tempfile.NamedTemporaryFile(
-        delete=False, mode="w", suffix=".txt"
+        delete=False, mode="w", suffix=suffix
     ) as temp_file:
         temp_file.write(output_text)
         return temp_file.name
 
 
-# Function to handle download
-def download_output(output_text):
-    file_path = save_output_to_file(output_text)
-    return file_path
+# Process
+def main(language: str, media: Union[str, Path]) -> Tuple[str, str, str, str]:
+    """
+    Choose a language to load a model
+    eventually download the media and transcribe it,
+    with and without timestamps.
+    Save them in two distinct temporary files.
+    Return the transcripts, and the files containing the transcripts.
+    """
+
+    models_dict = {
+        "French": Model(language="fr"),
+        "English": Model(),
+        "Multilingual": Model(language="multi"),
+    }
+    # Choose the model according to language choice
+    model = models_dict.get(language, models_dict["English"])
+    # Transcribe media
+    transcript, no_ts_transcript = model.transcribe_media(media)
+    # Create temporary files containing the transcripts.
+    transcript_file = save_output_to_file(transcript, ".srt")
+    no_ts_transcript_file = save_output_to_file(no_ts_transcript)
+    return transcript, no_ts_transcript, transcript_file, no_ts_transcript_file
 
 
 # Interface
 def run_app():
     gr.close_all()
     demo = gr.Blocks(title="Media transcriber")
+    # Youtube tab
     yt = gr.Interface(
         fn=main,
         inputs=[
             gr.Radio(
-                ["English", "French", "Multilingual"],
+                AVAILABLE_LANGUAGES,
                 label="language",
                 value="English",
                 info="If possible, opt for the Engligh or the French model. "
-                "The multilingual model is a slower model "
+                "The multilingual model is a model "
                 "that works more slowly than others.",
             ),
             gr.Textbox(
@@ -169,6 +186,8 @@ def run_app():
         outputs=[
             gr.Textbox(label="transcript without timestamps"),
             gr.Textbox(label="transcript with timestamps"),
+            gr.DownloadButton(label="Download transcript with timestamps"),
+            gr.DownloadButton(label="Download transcript without timestamps"),
         ],
         title="Transcribe YouTube videos using Distill-whisper",
         description=(
@@ -176,23 +195,27 @@ def run_app():
             "The model may have a hard time with background sounds/voices "
             "and proper nouns, so check the results!"
         ),
+        allow_flagging="never",
     )
+    # Local file
     local_file = gr.Interface(
         fn=main,
         inputs=[
             gr.Radio(
-                ["English", "French", "Multilingual"],
+                AVAILABLE_LANGUAGES,
                 label="language",
                 value="English",
                 info="If possible, opt for the Engligh or the French model. "
-                "The multilingual model is a slower model "
+                "The multilingual model is a model "
                 "that works more slowly than others.",
             ),
             gr.File(label="media", file_types=["audio", "video"]),
         ],
         outputs=[
-            gr.Textbox(label="transcript without timestamps"),
             gr.Textbox(label="transcript with timestamps"),
+            gr.Textbox(label="transcript without timestamps"),
+            gr.DownloadButton(label="Download transcript with timestamps"),
+            gr.DownloadButton(label="Download transcript without timestamps"),
         ],
         title="Transcribe a local audio file using Distill-whisper",
         description=(
@@ -200,7 +223,9 @@ def run_app():
             "The model may have a hard time with background sounds/voices "
             "and proper nouns, so check the results!"
         ),
+        allow_flagging="never",
     )
+    # Combine tabs
     with demo:
         gr.TabbedInterface(
             [yt, local_file], ["Youtube transcriber", "Local file transcriber"]
