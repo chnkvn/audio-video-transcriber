@@ -6,6 +6,7 @@ This repository offers a way to transcribe media files on cpu using
 - Ensure to install [[https://ffmpeg.org/download.html][ffmpeg binary]]
 - clone this repo
 - run ~pip install -r requirements.txt~
+ - run ~pip install gradio~ ; it is not included in requirements.txt due to a dependency conflict with yt-dlp and gradio (websockets version)
 - first clone [[https://huggingface.co/bofenghuang/whisper-large-v3-french-distil-dec16][bofenghuang/whisper-large-v3-french-distil-dec16]] at root level of this repository, using ~python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='bofenghuang/whisper-large-v3-french-distil-dec16', local_dir='./models/whisper-large-v3-french-distil-dec16', allow_patterns='ctranslate2/*')"~
 - go to ~models/~ ; clone this two repositories:  [[https://huggingface.co/Systran/faster-distil-whisper-large-v2][Systran/faster-distil-whisper-large-v2]], [[https://huggingface.co/Systran/faster-whisper-large-v2][Systran/faster-whisper-large-v2]]
 - you can run the unit tests by moving to ~tests~ folder and using ~python -m unittest tests -v~
